@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  SAM Template
+
+Resources:
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Aurora DB subnet group
+      SubnetIds:
+        - <MY_SUBNET_1>
+        - <MY_SUBNET_2>
+
+  DBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: Aurora DB SG
+      GroupDescription: Ingress rules for Aurora DB
+      VpcId: <MY_VPC>
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          CidrIp: 0.0.0.0/0
+
+  DBCluster:
+    Type: AWS::RDS::DBCluster
+    DeletionPolicy: Delete
+    Properties:
+      DatabaseName: mydatabase
+      DBClusterIdentifier: my-dbcluster
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      Engine: aurora-postgresql
+      EngineVersion: 15.4
+      MasterUsername: <MY_USER>
+      MasterUserPassword: <MY_PASSWORD>
+      Port: 5432
+      ServerlessV2ScalingConfiguration:
+        MaxCapacity: 1.0
+        MinCapacity: 0.5
+      VpcSecurityGroupIds:
+        - !Ref DBSecurityGroup
+
+  DBInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBClusterIdentifier: !Ref DBCluster
+      DBInstanceIdentifier: my-dbinstance
+      DBInstanceClass: db.serverless
+      Engine: aurora-postgresql
